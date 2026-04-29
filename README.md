@@ -1,5 +1,6 @@
 # DEEPSEEK.md
 
+GLM discussion
 
 Yes, exactly. You have hit on a critical distinction that often confuses people.
 
@@ -233,3 +234,48 @@ If you have 12GB-16GB VRAM, you can comfortably use up to ~32K-64K context. Push
 
 ### Summary
 You are spot on. By using `deepseek-coder-v2:lite` with its huge context, you effectively **bypass the model's knowledge gaps**. You don't need the model to *know* everything about Salesforce; you just need to *show* it the relevant documentation in the prompt, and it will reason perfectly over that data.
+
+---
+
+The speed (tokens per second or t/s) depends heavily on your hardware, but thanks to the **Mixture of Experts (MoE)** architecture of DeepSeek-Coder V2, it is surprisingly fast for a "16B" parameter model.
+
+Here is why: Even though the model is technically "16 Billion parameters," it only activates about **2.4 Billion parameters** per token. This makes it run almost as fast as much smaller models (like Llama 3 8B) while being much smarter.
+
+Here are the realistic speed estimates for the **DeepSeek-Coder V2 Lite (9GB model)**:
+
+### 1. The "Sweet Spot" Setup (NVIDIA RTX 3060 12GB / 4060 Ti 16GB)
+If the entire model fits into your GPU's VRAM (which is the goal):
+*   **Speed:** **40 to 60 tokens per second.**
+*   **Experience:** This feels like a snappy conversation. You can read the code as it generates. It is excellent for flow state.
+
+### 2. The High-End Setup (NVIDIA RTX 3090 / 4090 - 24GB VRAM)
+You have massive VRAM headroom:
+*   **Speed:** **80 to 120+ tokens per second.**
+*   **Experience:** This is blindingly fast. The code appears almost instantly. You barely have time to read the comments before the function is finished.
+
+### 3. The Mac Setup (Apple Silicon M1/M2/M3 - 16GB+ Unified Memory)
+Apple Silicon is highly optimized for these tasks:
+*   **Speed:** **25 to 45 tokens per second.**
+*   **Experience:** Very usable and smooth. The unified memory architecture handles the large context window efficiently.
+
+### 4. The "Bottleneck" Scenario (Using System RAM)
+If you try to run this on a GPU with only **8GB VRAM** (like an RTX 3070 or 4060 non-Ti), the model will not fit. It will spill over into your slower System RAM:
+*   **Speed:** **3 to 8 tokens per second.**
+*   **Experience:** Painful. You will watch it type out one word every second or two. It kills productivity for coding.
+
+---
+
+### The "Context Speed Trap" (Crucial for your 160K Context usage)
+
+There is a catch. The speeds above apply to **short context** (standard chat).
+
+As you fill up that massive **160K context window** (pasting large Apex classes or documentation), the speed will decrease. This is because the model has to scan the entire history every time it generates a new token.
+
+*   **At 4K Context (Normal Chat):** Full Speed (e.g., 50 t/s).
+*   **At 32K Context (Several Files):** Speed drops (e.g., 20-30 t/s).
+*   **At 100K+ Context:** Speed drops significantly (e.g., 5-10 t/s).
+
+**Recommendation:**
+For the best coding experience, keep your context clean. Don't paste the entire 160K if you don't need to. Just paste the relevant classes. This keeps the speed high and the latency low.
+
+**Summary:** If you have an RTX 3060 (12GB) or better, DeepSeek-Coder V2 Lite is one of the fastest local coding models available today, significantly outpacing heavier dense models like Llama-3-70B.
