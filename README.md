@@ -170,3 +170,66 @@ If you see it printing out code at a readable speed (like watching someone type)
 You would get a model that is great for **autocompletion** (like writing the rest of a function you started typing) but terrible at **chatting and reasoning**.
 
 **Verdict:** For your use case (an interactive coding assistant for Salesforce), stick to the **Instruct** version. It has the logic, reasoning, and conversation skills integrated.
+
+---
+
+You have perfectly identified the "superpower" of DeepSeek-Coder V2.
+
+You are absolutely correct: **160K context size is a game-changer for Salesforce development.**
+
+Most local models (like Llama 3 8B) have an 8K or 32K context window. Once you exceed that, they "forget" the beginning of your conversation. DeepSeek-Coder V2 Lite allows you to paste entire files, documentation, and schemas directly into the chat.
+
+Here is how you can leverage that massive context window to drastically reduce hallucinations and improve coding accuracy.
+
+### 1. The "Context Stuffing" Strategy
+Instead of hoping the model remembers the specific API name of a custom field or the syntax of a complex SOQL query, you can **force-feed** it the truth.
+
+**Scenario: Generating a Trigger Handler**
+Instead of just asking "Write a trigger for Case," you can provide the full context:
+
+> **Prompt:**
+> "I am going to provide you with the Apex Class definition for `CaseTriggerHandler` and the Schema for the `Case` object.
+>
+> **Context 1 (Schema):**
+> [Paste your .object-meta.xml or a describe call result showing custom fields like `Customer_Priority__c`, `SLA_Hours__c`]
+>
+> **Context 2 (Existing Code):**
+> [Paste your existing `TriggerHandler` framework or interface]
+>
+> **Task:**
+> Using the specific field names from Context 1 and the pattern from Context 2, write a method to update `SLA_Hours__c` when `Priority` changes. Ensure strict bulkification."
+
+**Why this helps:**
+The model isn't guessing. It has the exact field names (`SLA_Hours__c`) and the exact method signatures right in its "short-term memory" (the context window). This effectively eliminates the "I made up a field that doesn't exist" hallucination.
+
+### 2. Improving Java/Apex and SQL/SOQL Knowledge
+You mentioned improving knowledge of Java/SQL. Since the model has 160K tokens of space, you can act as your own "RAG" (Retrieval-Augmented Generation) system.
+
+*   **For Apex (Java-like):** If you need to implement a complex pattern (e.g., a Factory Pattern or Async Queueable chaining), you can paste a relevant excerpt from a Java design patterns book or the Salesforce Apex documentation directly into the prompt.
+    *   *Result:* The model will mimic the style and logic of the text you provided, ensuring the code is idiomatic and correct.
+*   **For SOQL (SQL-like):** Salesforce SOQL has specific limitations (e.g., no `JOIN`, relationship queries use dot notation). You can paste the specific SOQL documentation rules or your existing query patterns into the context.
+    *   *Result:* It will write SOQL that actually compiles in Salesforce, rather than writing standard SQL `JOINs` which Salesforce doesn't support.
+
+### 3. The "Entire Project" Analysis
+Because of the 160K window, you can technically paste **multiple files at once**.
+
+*   **Workflow:**
+    1.  Paste your `AccountController` (Apex).
+    2.  Paste your `accountList` component (LWC HTML/JS).
+    3.  Ask: "Check for security vulnerabilities (FLS/CRUD checks) in the Apex class and ensure the LWC component handles the `isLoading` state correctly based on the Apex response."
+
+The model can "see" both files simultaneously and reason about their interaction. This is something smaller models simply cannot do; they would forget the Apex class by the time you pasted the LWC code.
+
+### 4. The Hardware Reality Check (KV Cache)
+There is one catch to using this massive context locally.
+
+When you fill that context window with 50,000 words of code/documentation, the model needs to store the "state" of those words in memory. This is called the **KV Cache**.
+
+*   **Memory Usage:** The 160K context will consume significantly more VRAM/RAM than a standard 4K context.
+*   **Performance:** The model will generate tokens slightly slower as the context fills up (though DeepSeek's architecture is optimized for this).
+
+**Recommendation:**
+If you have 12GB-16GB VRAM, you can comfortably use up to ~32K-64K context. Pushing to the full 160K might cause your system to swap to system RAM (slowing down), but for most coding tasks, you rarely need the full 160K. Even using 20K-30K is enough to hold 3-4 large Apex classes or a significant chunk of documentation.
+
+### Summary
+You are spot on. By using `deepseek-coder-v2:lite` with its huge context, you effectively **bypass the model's knowledge gaps**. You don't need the model to *know* everything about Salesforce; you just need to *show* it the relevant documentation in the prompt, and it will reason perfectly over that data.
