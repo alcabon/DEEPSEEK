@@ -1,4 +1,4 @@
-# DEEPSEEK.md
+# DEEPSEEK
 
 GLM discussion
 
